@@ -1,65 +1,131 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { computePageRank } from '@/utils/computePageRank';
+import { computeHITS } from '@/utils/computeHits';
+import { PageRankResult, HITSResult, ViewType } from '@/types';
+import { nodes, edges } from '@/constants';
+import { GraphVisualization } from '@/components/GraphVisualization';
+import { ResultsTable } from '@/components/ResultsTable';
+import { ComparisonChart } from '@/components/ComparisionChart';
+import { ConvergenceChart } from '@/components/ConvergenceChart';
+import { Analysis } from '@/components/Analysis';
+import { ParameterControls } from '@/components/ParameterControls';
+import { ViewSelector } from '@/components/ViewSelector';
+
+const Page = () => {
+  const [pageRankResults, setPageRankResults] = useState<PageRankResult | null>(null);
+  const [hitsResults, setHitsResults] = useState<HITSResult | null>(null);
+  const [convergenceData, setConvergenceData] = useState<{ 
+    pr: Array<{ iteration: number; error: number }>; 
+    hits: Array<{ iteration: number; error: number }> 
+  }>({ pr: [], hits: [] });
+  const [iterations, setIterations] = useState({ pr: 0, hits: 0 });
+  const [activeView, setActiveView] = useState<ViewType>('graph');
+  const [dampingFactor, setDampingFactor] = useState(0.85);
+  const [threshold, setThreshold] = useState(0.0001);
+  const getTop5 = (scores: Record<string, number>): [string, number][] => {
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+};
+
+  useEffect(() => {
+    const prResult = computePageRank(dampingFactor, threshold);
+    const hitsResult = computeHITS(threshold);
+    
+    setPageRankResults(prResult);
+    setHitsResults(hitsResult);
+    setConvergenceData({ pr: prResult.convergence, hits: hitsResult.convergence });
+    setIterations({ pr: prResult.iterations, hits: hitsResult.iterations });
+  }, [dampingFactor, threshold]);
+
+  if (!pageRankResults || !hitsResults) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-lg font-semibold text-gray-700">Computing rankings...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-8 rounded-2xl shadow-xl text-white">
+          <h1 className="text-4xl font-bold mb-3">
+            PageRank & HITS Algorithm Analysis
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-indigo-100 text-lg">
+            Analyzing {nodes.length} nodes with {edges.length} directed edges • Damping Factor d = {dampingFactor} • Threshold &lt; {threshold}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <ParameterControls 
+          dampingFactor={dampingFactor}
+          threshold={threshold}
+          onDampingFactorChange={setDampingFactor}
+          onThresholdChange={setThreshold}
+        />
+
+        <ViewSelector 
+          activeView={activeView}
+          onViewChange={setActiveView}
+        />
+
+        {activeView === 'graph' && (
+          <GraphVisualization 
+            pageRankResults={pageRankResults}
+            hitsResults={hitsResults}
+          />
+        )}
+
+        {activeView === 'results' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <ResultsTable 
+              title="🏆 Top 5: PageRank" 
+              data={getTop5(pageRankResults.scores)} 
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <ResultsTable 
+              title="📚 Top 5: Authority Scores" 
+              data={getTop5(hitsResults.authority)} 
+              isHITS={true}
+              scoreType="Authority"
+            />
+            <ResultsTable 
+              title="🔗 Top 5: Hub Scores" 
+              data={getTop5(hitsResults.hub)} 
+              isHITS={true}
+              scoreType="Hub"
+            />
+          </div>
+        )}
+
+        {activeView === 'comparison' && (
+          <ComparisonChart 
+            pageRankResults={pageRankResults}
+            hitsResults={hitsResults}
+          />
+        )}
+        
+        {activeView === 'convergence' && (
+          <ConvergenceChart convergenceData={convergenceData} />
+        )}
+        
+        {activeView === 'analysis' && (
+          <Analysis 
+            pageRankResults={pageRankResults}
+            hitsResults={hitsResults}
+            iterations={iterations}
+            dampingFactor={dampingFactor}
+            threshold={threshold}
+          />
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default Page;
