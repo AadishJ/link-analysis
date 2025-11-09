@@ -1,13 +1,13 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PageRankResult, HITSResult } from '@/types';
-import { nodes } from '../constants';
 
 interface ComparisonChartProps {
   pageRankResults: PageRankResult | null;
   hitsResults: HITSResult | null;
+  nodes: string[];
 }
 
-export const ComparisonChart = ({ pageRankResults, hitsResults }: ComparisonChartProps) => {
+export const ComparisonChart = ({ pageRankResults, hitsResults, nodes }: ComparisonChartProps) => {
   if (!pageRankResults || !hitsResults) return null;
 
   const chartData = nodes.map(node => ({

@@ -1,9 +1,13 @@
 import { PageRankResult } from '@/types';
 import { buildGraph } from './buildGraph';
-import { nodes } from '../constants';
 
-export const computePageRank = (damping = 0.85, threshold = 0.0001): PageRankResult => {
-  const { graph } = buildGraph();
+export const computePageRank = (
+  edges: [string, string][],
+  nodes: string[],
+  damping = 0.85,
+  threshold = 0.0001
+): PageRankResult => {
+  const { graph } = buildGraph(edges, nodes);
   const n = nodes.length;
   let pr: Record<string, number> = {};
   let newPr: Record<string, number> = {};
@@ -18,7 +22,7 @@ export const computePageRank = (damping = 0.85, threshold = 0.0001): PageRankRes
     nodes.forEach(node => newPr[node] = (1 - damping) / n);
     
     nodes.forEach(node => {
-      const outDegree = graph[node].length;
+      const outDegree = graph[node]?.length || 0;
       if (outDegree > 0) {
         const contribution = pr[node] / outDegree;
         graph[node].forEach(target => {

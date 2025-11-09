@@ -1,7 +1,9 @@
 import { GraphData } from '@/types';
-import { edges, nodes } from '../constants';
 
-export const buildGraph = (): GraphData => {
+export const buildGraph = (
+  edges: [string, string][],
+  nodes: string[]
+): GraphData => {
   const graph: Record<string, string[]> = {};
   const inLinks: Record<string, string[]> = {};
   const outLinks: Record<string, string[]> = {};
@@ -13,9 +15,11 @@ export const buildGraph = (): GraphData => {
   });
   
   edges.forEach(([src, tgt]) => {
-    graph[src].push(tgt);
-    outLinks[src].push(tgt);
-    inLinks[tgt].push(src);
+    if (graph[src] && graph[tgt]) {
+      graph[src].push(tgt);
+      outLinks[src].push(tgt);
+      inLinks[tgt].push(src);
+    }
   });
   
   return { graph, inLinks, outLinks };

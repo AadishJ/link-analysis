@@ -1,20 +1,24 @@
 import { PageRankResult, HITSResult } from "@/types";
-import { edges, nodes } from "../constants";
 
 interface GraphVisualizationProps {
   pageRankResults: PageRankResult | null;
   hitsResults: HITSResult | null;
+  edges: [string, string][];
+  nodes: string[];
 }
 
 export const GraphVisualization = ({
   pageRankResults,
   hitsResults,
+  edges,
+  nodes,
 }: GraphVisualizationProps) => {
   const width = 800;
   const height = 600;
   const centerX = width / 2;
   const centerY = height / 2;
   const radius = 220;
+  
   const getTop5 = (scores: Record<string, number>): [string, number][] => {
     return Object.entries(scores)
       .sort((a, b) => b[1] - a[1])
@@ -71,10 +75,12 @@ export const GraphVisualization = ({
         </defs>
 
         {edges.map(([src, tgt], i) => {
-          const x1 = positions[src].x;
-          const y1 = positions[src].y;
-          const x2 = positions[tgt].x;
-          const y2 = positions[tgt].y;
+          const x1 = positions[src]?.x;
+          const y1 = positions[src]?.y;
+          const x2 = positions[tgt]?.x;
+          const y2 = positions[tgt]?.y;
+
+          if (!x1 || !y1 || !x2 || !y2) return null;
 
           const dx = x2 - x1;
           const dy = y2 - y1;

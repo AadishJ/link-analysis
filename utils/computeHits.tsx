@@ -1,9 +1,13 @@
+
 import { HITSResult } from '@/types';
 import { buildGraph } from './buildGraph';
-import { nodes } from '../constants';
 
-export const computeHITS = (threshold = 0.0001): HITSResult => {
-  const { inLinks, outLinks } = buildGraph();
+export const computeHITS = (
+  edges: [string, string][],
+  nodes: string[],
+  threshold = 0.0001
+): HITSResult => {
+  const { inLinks, outLinks } = buildGraph(edges, nodes);
   let auth: Record<string, number> = {};
   let hub: Record<string, number> = {};
   const convergence: Array<{ iteration: number; error: number }> = [];
@@ -21,11 +25,11 @@ export const computeHITS = (threshold = 0.0001): HITSResult => {
     const newHub: Record<string, number> = {};
     
     nodes.forEach(node => {
-      newAuth[node] = inLinks[node].reduce((sum, src) => sum + hub[src], 0);
+      newAuth[node] = (inLinks[node] || []).reduce((sum, src) => sum + hub[src], 0);
     });
     
     nodes.forEach(node => {
-      newHub[node] = outLinks[node].reduce((sum, tgt) => sum + auth[tgt], 0);
+      newHub[node] = (outLinks[node] || []).reduce((sum, tgt) => sum + auth[tgt], 0);
     });
     
     const authNorm = Math.sqrt(Object.values(newAuth).reduce((s, v) => s + v * v, 0));
